@@ -1,0 +1,29 @@
+# Streamlit Cloud Compatible Requirements
+# Core dependencies for RAG chatbot functionality
+
+streamlit>=1.28.0
+openai>=1.30.0
+pypdfium2>=4.18.0
+
+# LangChain stack
+langchain>=0.1.0
+langchain-openai>=0.1.0
+langchain-community>=0.0.28
+langchain-chroma>=0.1.2
+
+# Vector database
+chromadb>=0.4.0
+
+# Essential data processing
+pandas>=2.0.0
+numpy>=1.26.0
+
+# Visualization (lighter versions for cloud)
+plotly>=5.0.0
+
+# NLP processing
+nltk>=3.8.0
+scikit-learn>=1.2.0
+
+# Optional UI enhancements
+streamlit-extras>=0.2.0
