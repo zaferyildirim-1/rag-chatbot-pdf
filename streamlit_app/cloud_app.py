@@ -105,14 +105,14 @@ st.markdown("""
         margin-bottom: 2rem;
     }
     .user-message {
-        background-color: #f8f9fa;
+        background-color: #transparent;
         padding: 1rem;
         border-radius: 0.5rem;
         margin: 1rem 0;
         border-left: 4px solid #1e88e5;
     }
     .assistant-message {
-    background-color: #ffffff; /* or #ffffff or #f8f9fa */
+    background-color: #tranparent; /* or #ffffff or #f8f9fa */
     padding: 1rem;
     border-radius: 0.5rem;
     margin: 1rem 0;
