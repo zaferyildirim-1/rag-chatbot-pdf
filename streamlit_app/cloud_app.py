@@ -128,51 +128,52 @@ st.markdown("### Upload academic papers and chat with intelligent AI assistance"
 # Sidebar configuration
 with st.sidebar:
     st.header("🔧 Configuration")
-    
+
     # API Key input
     api_key = st.text_input(
-        "OpenAI API Key", 
-        type="password", 
+        "OpenAI API Key",
+        type="password",
         help="Enter your OpenAI API key to enable the chatbot"
     )
-    
-    # Model configuration
-    st.subheader("Model Settings")
-    k = st.slider(
-        "Number of retrieved chunks", 
-        min_value=1, 
-        max_value=15, 
-        value=5,
-        help="Number of document chunks to retrieve for each query"
-    )
-    
-    temperature = st.slider(
-        "Response creativity", 
-        min_value=0.0, 
-        max_value=1.0, 
-        value=0.1,
-        step=0.1,
-        help="Higher values make responses more creative but less focused"
-    )
-    
-    # Advanced options
-    with st.expander("🔧 Advanced Options"):
+
+    # Put model settings and processing options inside the Advanced Options expander
+    with st.expander("🔧 Advanced Options", expanded=False):
+        st.subheader("Model Settings")
+        k = st.slider(
+            "Number of retrieved chunks",
+            min_value=1,
+            max_value=15,
+            value=5,
+            help="Number of document chunks to retrieve for each query"
+        )
+
+        temperature = st.slider(
+            "Response creativity",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.1,
+            step=0.1,
+            help="Higher values make responses more creative but less focused"
+        )
+
+        st.markdown("---")
+        st.subheader("Processing Options")
         chunk_size = st.number_input(
-            "Chunk size", 
-            min_value=200, 
-            max_value=2000, 
-            value=PIPE_CFG["chunk_size"],
+            "Chunk size",
+            min_value=200,
+            max_value=2000,
+            value=PIPE_CFG.get("chunk_size", 1000),
             help="Size of text chunks for processing"
         )
         chunk_overlap = st.number_input(
-            "Chunk overlap", 
-            min_value=0, 
-            max_value=500, 
-            value=PIPE_CFG["chunk_overlap"],
+            "Chunk overlap",
+            min_value=0,
+            max_value=500,
+            value=PIPE_CFG.get("chunk_overlap", 200),
             help="Overlap between consecutive chunks"
         )
-    
-    # Clear chat history
+
+    # Clear chat history (kept outside expander so it's easy to access)
     if st.button("🗑️ Clear Chat History", use_container_width=True):
         st.session_state.msgs = []
         st.session_state.chat_stats = {"questions": 0, "processing_times": []}
