@@ -296,89 +296,6 @@ with col1:
                     st.success(f"✅ Successfully processed {uploaded.name}!")
                     st.balloons()
 
-# Chat interface
-st.subheader("💬 Chat Interface")
-
-# Initialize chat input state
-if "chat_input_key" not in st.session_state:
-    st.session_state.chat_input_key = 0
-
-# Handle follow-up questions
-follow_up_value = ""
-if "follow_up_question" in st.session_state:
-    follow_up_value = st.session_state.follow_up_question
-    del st.session_state.follow_up_question
-
-# Create a form for better chat flow
-with st.form(key=f"chat_form_{st.session_state.chat_input_key}", clear_on_submit=True):
-    col_input, col_send = st.columns([4, 1])
-    
-    with col_input:
-        user_q = st.text_input(
-            "Ask a question about the document:", 
-            value=follow_up_value,  # Pre-fill with follow-up question if available
-            placeholder="What is the main contribution of this paper?",
-            key=f"question_input_{st.session_state.chat_input_key}",
-            label_visibility="collapsed"
-        )
-    
-    with col_send:
-        send_button = st.form_submit_button("🚀 Send", use_container_width=True)
-
-# Alternative: Chat input (if available in your Streamlit version)
-# user_q = st.chat_input("Ask a question about the document...")
-
-# Process question when form is submitted or enter is pressed
-if (send_button and user_q) or (user_q and not send_button):
-    if not api_key:
-        st.warning("⚠️ Please enter your OpenAI API key in the sidebar.")
-    elif st.session_state.vectorstore is None:
-        st.info("📋 Please upload and process a PDF first.")
-    else:
-        # Increment the key to reset the form
-        st.session_state.chat_input_key += 1
-        
-        with st.spinner("🤔 Thinking..."):
-            start_time = time.time()
-            
-            try:
-                # Add conversation context for follow-up questions
-                contextual_query = user_q
-                if len(st.session_state.msgs) >= 2:  # If there's previous conversation
-                    last_q = st.session_state.msgs[-2][1] if st.session_state.msgs[-2][0] == "user" else ""
-                    last_a = st.session_state.msgs[-1][1] if st.session_state.msgs[-1][0] == "assistant" else ""
-                    
-                    # Check if this might be a follow-up question
-                    follow_up_indicators = ["this", "that", "it", "explain", "clarify", "more", "previous", "above"]
-                    if any(indicator in user_q.lower() for indicator in follow_up_indicators):
-                        contextual_query = f"Previous question: {last_q}\nPrevious answer: {last_a[:200]}...\n\nNew question: {user_q}"
-                
-                qa = _make_qa_chain(st.session_state.vectorstore, k=k, temp=temperature)
-                result = qa.invoke({"query": contextual_query})
-                
-                if isinstance(result, dict):
-                    answer = result.get("result", str(result))
-                    sources = result.get("source_documents", [])
-                else:
-                    answer = str(result)
-                    sources = []
-                
-                processing_time = time.time() - start_time
-                
-                # Update session stats
-                st.session_state.chat_stats["questions"] += 1
-                st.session_state.chat_stats["processing_times"].append(processing_time)
-                
-                # Add to chat history
-                st.session_state.msgs.append(("user", user_q))
-                st.session_state.msgs.append(("assistant", answer, sources))
-                
-                # Auto-scroll to bottom by rerunning
-                st.rerun()
-                
-            except Exception as e:
-                st.error(f"❌ Error generating response: {str(e)}")
-
 # Display chat history
 if st.session_state.msgs:
     st.subheader("� Conversation")
@@ -460,51 +377,22 @@ else:
         - What are the implications?
         """)
 
-# Sidebar statistics
-with col2:
-    st.subheader("📊 Session Statistics")
-    
-    # Document stats
-    if hasattr(st.session_state, 'doc_stats'):
-        with st.container():
-            st.metric("📄 Document", st.session_state.doc_stats["filename"])
-            
-            col_a, col_b = st.columns(2)
-            with col_a:
-                st.metric("📖 Pages", st.session_state.doc_stats["pages"])
-            with col_b:
-                st.metric("📝 Chunks", st.session_state.doc_stats["chunks"])
-    
-    # Chat stats
-    stats = st.session_state.chat_stats
-    with st.container():
-        st.metric("❓ Questions Asked", stats["questions"])
-        
-        if stats["processing_times"]:
-            avg_time = sum(stats["processing_times"]) / len(stats["processing_times"])
-            st.metric("⚡ Avg Response Time", f"{avg_time:.2f}s")
-            
-            # Simple response time chart (fallback if plotly not available)
-            if HAS_PLOTLY and len(stats["processing_times"]) > 1:
-                fig = px.line(
-                    x=list(range(1, len(stats["processing_times"]) + 1)),
-                    y=stats["processing_times"],
-                    title="Response Times"
-                )
-                fig.update_layout(height=200, margin=dict(l=0, r=0, t=30, b=0))
-                st.plotly_chart(fig, use_container_width=True)
-            elif len(stats["processing_times"]) > 1:
-                # Fallback to simple line chart
-                if HAS_PANDAS:
-                    chart_data = pd.DataFrame({
-                        "Question": list(range(1, len(stats["processing_times"]) + 1)),
-                        "Time (seconds)": stats["processing_times"]
-                    })
-                    st.line_chart(chart_data.set_index("Question"))
+# Chat Interface - Now at the bottom for better flow
+st.markdown("---")
 
-# Quick action buttons - only show if document is processed
+# Initialize chat input state
+if "chat_input_key" not in st.session_state:
+    st.session_state.chat_input_key = 0
+
+# Handle follow-up questions
+follow_up_value = ""
+if "follow_up_question" in st.session_state:
+    follow_up_value = st.session_state.follow_up_question
+    del st.session_state.follow_up_question
+
+# Show input only if document is processed and API key is provided
 if st.session_state.vectorstore is not None and api_key:
-    st.markdown("---")
+    # Quick action buttons right above input for better flow
     st.markdown("**🚀 Quick Questions:**")
     col_q1, col_q2, col_q3, col_q4 = st.columns(4)
 
@@ -547,6 +435,130 @@ if st.session_state.vectorstore is not None and api_key:
             if st.button("🔬 Technical Details", use_container_width=True):
                 st.session_state.follow_up_question = "Can you provide more technical details and specifics?"
                 st.rerun()
+    
+    # Chat input at the bottom with better styling
+    st.markdown("---")
+    st.markdown("### 💬 Ask your next question:")
+    
+    # Create a form for better chat flow
+    with st.form(key=f"chat_form_{st.session_state.chat_input_key}", clear_on_submit=True):
+        col_input, col_send = st.columns([5, 1])
+        
+        with col_input:
+            user_q = st.text_input(
+                "Type your question here:", 
+                value=follow_up_value,  # Pre-fill with follow-up question if available
+                placeholder="What would you like to know next about this document?",
+                key=f"question_input_{st.session_state.chat_input_key}",
+                label_visibility="collapsed",
+                help="Ask follow-up questions, request clarifications, or explore new topics!"
+            )
+        
+        with col_send:
+            send_button = st.form_submit_button("� Send", use_container_width=True)
+
+    # Process question when form is submitted
+    if send_button and user_q:
+        # Increment the key to reset the form
+        st.session_state.chat_input_key += 1
+        
+        with st.spinner("🤔 Thinking..."):
+            start_time = time.time()
+            
+            try:
+                # Add conversation context for follow-up questions
+                contextual_query = user_q
+                if len(st.session_state.msgs) >= 2:  # If there's previous conversation
+                    last_q = st.session_state.msgs[-2][1] if st.session_state.msgs[-2][0] == "user" else ""
+                    last_a = st.session_state.msgs[-1][1] if st.session_state.msgs[-1][0] == "assistant" else ""
+                    
+                    # Check if this might be a follow-up question
+                    follow_up_indicators = ["this", "that", "it", "explain", "clarify", "more", "previous", "above"]
+                    if any(indicator in user_q.lower() for indicator in follow_up_indicators):
+                        contextual_query = f"Previous question: {last_q}\nPrevious answer: {last_a[:200]}...\n\nNew question: {user_q}"
+                
+                qa = _make_qa_chain(st.session_state.vectorstore, k=k, temp=temperature)
+                result = qa.invoke({"query": contextual_query})
+                
+                if isinstance(result, dict):
+                    answer = result.get("result", str(result))
+                    sources = result.get("source_documents", [])
+                else:
+                    answer = str(result)
+                    sources = []
+                
+                processing_time = time.time() - start_time
+                
+                # Update session stats
+                st.session_state.chat_stats["questions"] += 1
+                st.session_state.chat_stats["processing_times"].append(processing_time)
+                
+                # Add to chat history
+                st.session_state.msgs.append(("user", user_q))
+                st.session_state.msgs.append(("assistant", answer, sources))
+                
+                # Auto-scroll to bottom by rerunning
+                st.rerun()
+                
+            except Exception as e:
+                st.error(f"❌ Error generating response: {str(e)}")
+
+elif not api_key:
+    st.markdown("---")
+    st.info("🔑 **Enter your OpenAI API key in the sidebar to start chatting**")
+elif st.session_state.vectorstore is None:
+    st.markdown("---")
+    st.info("📄 **Upload and process a PDF document to start chatting**")
+
+# Add a helpful tip about the new chat flow
+if st.session_state.vectorstore is not None and api_key and len(st.session_state.msgs) > 0:
+    st.markdown("""
+    <div style='background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-top: 10px;'>
+    💡 <strong>Tip:</strong> The conversation continues here! Use the buttons above or type your own questions below.
+    </div>
+    """, unsafe_allow_html=True)
+
+# Sidebar statistics
+with col2:
+    st.subheader("📊 Session Statistics")
+    
+    # Document stats
+    if hasattr(st.session_state, 'doc_stats'):
+        with st.container():
+            st.metric("📄 Document", st.session_state.doc_stats["filename"])
+            
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.metric("📖 Pages", st.session_state.doc_stats["pages"])
+            with col_b:
+                st.metric("📝 Chunks", st.session_state.doc_stats["chunks"])
+    
+    # Chat stats
+    stats = st.session_state.chat_stats
+    with st.container():
+        st.metric("❓ Questions Asked", stats["questions"])
+        
+        if stats["processing_times"]:
+            avg_time = sum(stats["processing_times"]) / len(stats["processing_times"])
+            st.metric("⚡ Avg Response Time", f"{avg_time:.2f}s")
+            
+            # Simple response time chart (fallback if plotly not available)
+            if HAS_PLOTLY and len(stats["processing_times"]) > 1:
+                fig = px.line(
+                    x=list(range(1, len(stats["processing_times"]) + 1)),
+                    y=stats["processing_times"],
+                    title="Response Times"
+                )
+                fig.update_layout(height=200, margin=dict(l=0, r=0, t=30, b=0))
+                st.plotly_chart(fig, use_container_width=True)
+            elif len(stats["processing_times"]) > 1:
+                # Fallback to simple line chart
+                if HAS_PANDAS:
+                    chart_data = pd.DataFrame({
+                        "Question": list(range(1, len(stats["processing_times"]) + 1)),
+                        "Time (seconds)": stats["processing_times"]
+                    })
+                    st.line_chart(chart_data.set_index("Question"))
 
 # Footer with system info
 with st.expander("🔧 System Information"):
