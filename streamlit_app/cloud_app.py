@@ -12,11 +12,12 @@ if str(REPO_ROOT) not in sys.path:
 
 # Soft checks for cloud deployment
 if not PKG_DIR.exists():
-    st.error(f"Expected package folder not found: {PKG_DIR}")
-    st.stop()
-if not (PKG_DIR / "__init__.py").exists():
-    st.warning(f"Missing __init__.py in {PKG_DIR} - creating it")
-    (PKG_DIR / "__init__.py").touch()
+    # Will show error after streamlit import
+    PKG_DIR_EXISTS = False
+else:
+    PKG_DIR_EXISTS = True
+    if not (PKG_DIR / "__init__.py").exists():
+        (PKG_DIR / "__init__.py").touch()
 # --------------------------------------------------
 
 import os
@@ -28,6 +29,11 @@ from pathlib import Path
 from datetime import datetime
 
 import streamlit as st
+
+# Check if package directory exists (delayed from earlier)
+if not PKG_DIR_EXISTS:
+    st.error(f"Expected package folder not found: {PKG_DIR}")
+    st.stop()
 
 # Plotting libraries (optional for cloud deployment)
 try:
@@ -57,9 +63,9 @@ except ImportError:
     st.warning("rag_pipeline not found - using defaults")
     PIPE_CFG = {
         "embedding_model": "text-embedding-3-large", 
-        "embedding_dims": 3072,
-        "chunk_size": 512,
-        "chunk_overlap": 64,
+        "embedding_dimensions": 3072,
+        "chunk_size": 1000,
+        "chunk_overlap": 200,
         "llm_model": "gpt-4o-mini",
         "llm_temperature": 0.0,
         "retrieval_k": 6
