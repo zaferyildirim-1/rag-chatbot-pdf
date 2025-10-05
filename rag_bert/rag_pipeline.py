@@ -23,8 +23,6 @@ CONFIG = {
     "chunk_size": 1000,
     "chunk_overlap": 200,
     "llm_model": "gpt-4o-mini",
-    "llm_temperature": 0.0,
-    "retrieval_k": 6
 }
 
 
