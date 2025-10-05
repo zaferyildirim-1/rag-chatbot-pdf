@@ -10,14 +10,6 @@ PKG_DIR = REPO_ROOT / "rag_bert"         # must exist: .../rag_bert
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-# Soft checks for cloud deployment
-if not PKG_DIR.exists():
-    # Will show error after streamlit import
-    PKG_DIR_EXISTS = False
-else:
-    PKG_DIR_EXISTS = True
-    if not (PKG_DIR / "__init__.py").exists():
-        (PKG_DIR / "__init__.py").touch()
 # --------------------------------------------------
 
 import os
@@ -30,10 +22,13 @@ from datetime import datetime
 
 import streamlit as st
 
-# Check if package directory exists (delayed from earlier)
-if not PKG_DIR_EXISTS:
+# Check if package directory exists (delayed error handling)
+if not PKG_DIR.exists():
     st.error(f"Expected package folder not found: {PKG_DIR}")
     st.stop()
+elif not (PKG_DIR / "__init__.py").exists():
+    st.warning(f"Missing __init__.py in {PKG_DIR} - creating it")
+    (PKG_DIR / "__init__.py").touch()
 
 # Plotting libraries (optional for cloud deployment)
 try:
@@ -56,20 +51,27 @@ from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 
-# Try to import from our package
+# Default configuration - will be used if import fails
+DEFAULT_CONFIG = {
+    "embedding_model": "text-embedding-3-large", 
+    "embedding_dimensions": 3072,
+    "chunk_size": 1000,
+    "chunk_overlap": 200,
+    "llm_model": "gpt-4o-mini",
+    "llm_temperature": 0.0,
+    "retrieval_k": 6
+}
+
+# Try to import from our package, fall back to defaults
 try:
-    from rag_pipeline import CONFIG as PIPE_CFG  # noqa
+    from rag_pipeline import CONFIG as PIPE_CFG
+    # Ensure all required keys exist
+    for key in DEFAULT_CONFIG:
+        if key not in PIPE_CFG:
+            PIPE_CFG[key] = DEFAULT_CONFIG[key]
 except ImportError:
-    st.warning("rag_pipeline not found - using defaults")
-    PIPE_CFG = {
-        "embedding_model": "text-embedding-3-large", 
-        "embedding_dimensions": 3072,
-        "chunk_size": 1000,
-        "chunk_overlap": 200,
-        "llm_model": "gpt-4o-mini",
-        "llm_temperature": 0.0,
-        "retrieval_k": 6
-    }
+    st.info("Using default configuration (rag_pipeline not found)")
+    PIPE_CFG = DEFAULT_CONFIG
 
 # Import prompts from the package if available
 try:
@@ -180,7 +182,7 @@ def _make_qa_chain(vectorstore, k=6, temp=0.0):
         **chain_kwargs
     )
 
-def load_and_split_pdf(uploaded_file, chunk_size=512, chunk_overlap=64):
+def load_and_split_pdf(uploaded_file, chunk_size=1000, chunk_overlap=200):
     """Load and split a PDF file."""
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         tmp_file.write(uploaded_file.getvalue())
@@ -370,10 +372,6 @@ if st.session_state.msgs:
                                 {doc.page_content[:300]}{'...' if len(doc.page_content) > 300 else ''}
                             </div>
                             """, unsafe_allow_html=True)
-
-# Initialize processing state
-if "is_processing" not in st.session_state:
-    st.session_state.is_processing = False
 
 # Handle follow-up questions
 follow_up_value = ""
