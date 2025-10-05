@@ -326,33 +326,12 @@ if st.session_state.msgs:
                             st.markdown(f"**Source {j+1}:**")
                             st.text(source.page_content[:300] + "..." if len(source.page_content) > 300 else source.page_content)
                 
-                # Add quick follow-up suggestions after the latest response
-                if i == len(st.session_state.msgs) - 1:  # Only for the most recent response
-                    st.markdown("**💭 Quick follow-ups:**")
-                    follow_up_col1, follow_up_col2, follow_up_col3 = st.columns(3)
-                    
-                    with follow_up_col1:
-                        if st.button("🔍 Tell me more", key=f"more_{i}", use_container_width=True):
-                            # Set the input value for the next question
-                            st.session_state.follow_up_question = "Can you provide more details about your previous answer?"
-                            st.rerun()
-                    
-                    with follow_up_col2:
-                        if st.button("❓ Clarify", key=f"clarify_{i}", use_container_width=True):
-                            st.session_state.follow_up_question = "Can you clarify or simplify your previous explanation?"
-                            st.rerun()
-                    
-                    with follow_up_col3:
-                        if st.button("📖 Examples", key=f"examples_{i}", use_container_width=True):
-                            st.session_state.follow_up_question = "Can you provide specific examples related to your previous answer?"
-                            st.rerun()
-                
                 # Add a small separator after each assistant response
                 st.markdown("---")
     
-    # Show a hint for continuing the conversation
+    # Show a simple hint for continuing the conversation
     if len(st.session_state.msgs) > 0:
-        st.info("💡 **Tip:** You can ask follow-up questions, request clarifications, or explore different aspects of the document!")
+        st.info("💡 **Continue the conversation below!**")
 
 else:
     # Show helpful prompts when no conversation has started
@@ -392,51 +371,7 @@ if "follow_up_question" in st.session_state:
 
 # Show input only if document is processed and API key is provided
 if st.session_state.vectorstore is not None and api_key:
-    # Quick action buttons right above input for better flow
-    st.markdown("**🚀 Quick Questions:**")
-    col_q1, col_q2, col_q3, col_q4 = st.columns(4)
-
-    with col_q1:
-        if st.button("🎯 Main Contribution", use_container_width=True):
-            st.session_state.follow_up_question = "What is the main contribution of this paper?"
-            st.rerun()
-
-    with col_q2:
-        if st.button("🧪 Methodology", use_container_width=True):
-            st.session_state.follow_up_question = "What methodology does this paper use?"
-            st.rerun()
-
-    with col_q3:
-        if st.button("📈 Results", use_container_width=True):
-            st.session_state.follow_up_question = "What are the key results and findings?"
-            st.rerun()
-
-    with col_q4:
-        if st.button("🔍 Future Work", use_container_width=True):
-            st.session_state.follow_up_question = "What future work is suggested?"
-            st.rerun()
-    
-    # Additional contextual questions based on conversation
-    if len(st.session_state.msgs) > 0:
-        st.markdown("**🤔 Explore Further:**")
-        col_e1, col_e2, col_e3 = st.columns(3)
-        
-        with col_e1:
-            if st.button("🔄 Different Perspective", use_container_width=True):
-                st.session_state.follow_up_question = "Can you explain this from a different angle or perspective?"
-                st.rerun()
-        
-        with col_e2:
-            if st.button("🎓 For Beginners", use_container_width=True):
-                st.session_state.follow_up_question = "Can you explain this in simpler terms for someone new to the field?"
-                st.rerun()
-        
-        with col_e3:
-            if st.button("🔬 Technical Details", use_container_width=True):
-                st.session_state.follow_up_question = "Can you provide more technical details and specifics?"
-                st.rerun()
-    
-    # Chat input at the bottom with better styling
+    # Chat input at the bottom with clean styling
     st.markdown("---")
     st.markdown("### 💬 Ask your next question:")
     
@@ -448,10 +383,9 @@ if st.session_state.vectorstore is not None and api_key:
             user_q = st.text_input(
                 "Type your question here:", 
                 value=follow_up_value,  # Pre-fill with follow-up question if available
-                placeholder="What would you like to know next about this document?",
+                placeholder="Ask me anything about this document...",
                 key=f"question_input_{st.session_state.chat_input_key}",
-                label_visibility="collapsed",
-                help="Ask follow-up questions, request clarifications, or explore new topics!"
+                label_visibility="collapsed"
             )
         
         with col_send:
@@ -510,13 +444,9 @@ elif st.session_state.vectorstore is None:
     st.markdown("---")
     st.info("📄 **Upload and process a PDF document to start chatting**")
 
-# Add a helpful tip about the new chat flow
+# Simple visual indicator for active chat
 if st.session_state.vectorstore is not None and api_key and len(st.session_state.msgs) > 0:
-    st.markdown("""
-    <div style='background-color: #f0f2f6; padding: 10px; border-radius: 5px; margin-top: 10px;'>
-    💡 <strong>Tip:</strong> The conversation continues here! Use the buttons above or type your own questions below.
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown("*Ready for your next question...*")
 
 # Sidebar statistics
 with col2:
