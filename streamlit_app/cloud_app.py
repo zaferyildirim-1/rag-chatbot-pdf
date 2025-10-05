@@ -112,12 +112,12 @@ st.markdown("""
         border-left: 4px solid #1e88e5;
     }
     .assistant-message {
-        background-color: #f3e5f5;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-        border-left: 4px solid #8e24aa;
-    }
+    background-color: transparent; /* or #ffffff or #f8f9fa */
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+    border-left: 1px solid #e0e0e0; /* subtle */
+}
 </style>
 """, unsafe_allow_html=True)
 
